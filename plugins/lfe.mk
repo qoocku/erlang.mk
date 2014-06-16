@@ -1,5 +1,5 @@
-LFE_SRC_DIR = $(CURDIR)/src
-LFE_TEST_DIR = $(CURDIR)/test
+LFE_SRC_DIR ?= $(CURDIR)/src
+LFE_TEST_DIR ?= $(CURDIR)/test
 LFEC ?= lfec
 
 ifneq ($(wildcard $(LFE_SRC_DIR)/*.lfe),)
