@@ -64,7 +64,8 @@ checkout_hg = hg update -C $(1)
 ```
 
 where `fetch_*` macro uses two parameters: the first one stands for repo url and
-2nd one for the clone/working-dir target directory.
+2nd one for the clone/working-dir target directory. Macro `checkout_*` should accept
+one parameter which indicates commit, tag, branch or another form of specific revision.
 
 They will always be compiled using the command `make`. If the dependency
 does not feature a Makefile, then erlang.mk will be used for building.
