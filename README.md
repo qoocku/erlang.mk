@@ -32,7 +32,7 @@ Dependencies
 Erlang projects often depend on other projects to run. Adding dependencies
 to the Makefile is easy. You need to create the variable `DEPS` listing
 the names of all the dependencies, along with one `dep_$(NAME)` variable
-per dependency giving the git repository and commit to retrieve.
+per dependency giving a repository and commit to retrieve.
 
 These variables should be defined before the include line.
 
@@ -41,6 +41,30 @@ DEPS = cowboy bullet
 dep_cowboy = https://github.com/extend/cowboy.git 0.8.4
 dep_bullet = https://github.com/extend/bullet.git 0.4.1
 ```
+
+The default repository type is GIT but one may specify another one
+defining dependency access as 3 element list:
+
+```
+dep_foobar = <repo-type> <repo-url> <commit-ptr>
+```
+
+For example, Mercurial repo should be specified like the following:
+
+```
+dep_foobar = hg https://bitbucket.org/xyz/foobar tip
+```
+
+`erlang.mk` will recognize this if the main make file which includes `erlang.mk` defines the
+following macros:
+
+```
+fetch_hg = hg clone $(1) $(2)
+checkout_hg = hg update -C $(1)
+```
+
+where `fetch_*` macro uses two parameters: the first one stands for repo url and
+2nd one for the clone/working-dir target directory.
 
 They will always be compiled using the command `make`. If the dependency
 does not feature a Makefile, then erlang.mk will be used for building.
