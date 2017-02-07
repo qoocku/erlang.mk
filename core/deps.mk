@@ -34,7 +34,11 @@ deps:: $(ALL_DEPS_DIRS)
 		if [ -f $$dep/Makefile ] ; then \
 			$(MAKE) -C $$dep ; \
 		else \
-			echo "include $(CURDIR)/erlang.mk" | $(MAKE) -f - -C $$dep ; \
+			if [ -f $$dep/rebar.config ] ; then \
+				cd $$dep ; ./rebar get-deps compile ; \
+			else \
+				echo "include $(CURDIR)/erlang.mk" | $(MAKE) -f - -C $$dep ; \
+			fi ; \
 		fi ; \
 	done
 
@@ -42,22 +46,31 @@ distclean:: distclean-deps distclean-pkg
 
 # Deps related targets.
 
+get_pkg_file := wget $(PKG_FILE_URL) -o $(PKG_FILE)
+
+fetch_git = git clone -n -- $(1) $(2)
+checkout_git = git checkout -q $(1)
+dep[repo_type] = $(if $(findstring 3,$(words $(dep_$(1)))),$(word 1,$(dep_$(1))),git)
+dep[repo_url] = $(if $(findstring 3,$(words $(dep_$(1)))),$(word 2,$(dep_$(1))),$(word 1,$(dep_$(1))))
+dep[repo_rev] = $(if $(findstring 3,$(words $(dep_$(1)))),$(word 3,$(dep_$(1))),$(word 2,$(dep_$(1))))
+
 define dep_fetch
 	@mkdir -p $(DEPS_DIR)
 ifeq (,$(findstring pkg://,$(word 1,$(dep_$(1)))))
-	git clone -n -- $(word 1,$(dep_$(1))) $(DEPS_DIR)/$(1)
+	@$(call fetch_$(2),$(dep[repo_url]),$(DEPS_DIR)/$(1),$(dep[repo_rev]))
 else
-	@if [ ! -f $(PKG_FILE) ]; then $(call get_pkg_file); fi
+	@if [ ! -f $(PKG_FILE) ]; then $(call get_pkg_file); fi ; \
 	git clone -n -- `awk 'BEGIN { FS = "\t" }; \
 		$$$$1 == "$(subst pkg://,,$(word 1,$(dep_$(1))))" { print $$$$2 }' \
 		$(PKG_FILE)` $(DEPS_DIR)/$(1)
 endif
-	cd $(DEPS_DIR)/$(1) ; git checkout -q $(word 2,$(dep_$(1)))
+	@cd $(DEPS_DIR)/$(1) ; $(call checkout_$(2),$(dep[repo_rev]))
 endef
 
 define dep_target
+$(info Processing dependency $(1) located at "$(dep_$(1))")
 $(DEPS_DIR)/$(1):
-	$(call dep_fetch,$(1))
+	$(call dep_fetch,$(1),$(if $(findstring 3,$(words $(dep_$(1)))),$(word 1,$(dep_$(1))),git))
 endef
 
 $(foreach dep,$(DEPS),$(eval $(call dep_target,$(dep))))
